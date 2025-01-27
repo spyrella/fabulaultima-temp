@@ -12,7 +12,6 @@ import { GroupCheck as GroupCheckV2 } from '../checks/group-check.mjs';
 import { InlineHelper } from '../helpers/inline-helper.mjs';
 
 const TOGGLEABLE_STATUS_EFFECT_IDS = ['crisis', 'slow', 'dazed', 'enraged', 'dex-up', 'mig-up', 'ins-up', 'wlp-up', 'guard', 'weak', 'shaken', 'poisoned', 'dex-down', 'mig-down', 'ins-down', 'wlp-down'];
-const CLOCK_TYPES = ['zeroPower', 'ritual', 'miscAbility', 'rule'];
 const SKILL_TYPES = ['skill'];
 const RESOURCE_POINT_TYPES = ['miscAbility', 'skill', 'heroic'];
 const WEARABLE_TYPES = ['armor', 'shield', 'accessory'];
@@ -227,6 +226,8 @@ export class FUStandardActorSheet extends ActorSheet {
 
 		// Iterate through items, allocating to containers
 		for (let item of context.items) {
+			const itemObj = context.actor.items.get(item._id);
+			
 			item.img = item.img || CONST.DEFAULT_TOKEN;
 
 			if (item.system.quality?.value) {
@@ -259,18 +260,11 @@ export class FUStandardActorSheet extends ActorSheet {
 			item.progressCurr = item.system.progress?.current;
 			item.progressStep = item.system.progress?.step;
 			item.progressMax = item.system.progress?.max;
-
-			if (CLOCK_TYPES.includes(item.type)){
-				const progressArr = [];
+			if (itemObj.isClockType()){
 				const progress = item.system.progress || { current: 0, max: 6 };
-				for (let i = 0; i < progress.max; i++) {
-					progressArr.push({
-						id: i + 1,
-						checked: parseInt(progress.current) === i + 1,
-					});
-				}
-				item.progressArr = progressArr.reverse();
+				item.progressArr = itemObj.generateProgressArray(progress);
 			}
+
 			if (RESOURCE_POINT_TYPES.includes(item.type)){
 				const rpArr = [];
 				const rp = item.system.rp || { current: 0, max: 6 };
@@ -306,7 +300,6 @@ export class FUStandardActorSheet extends ActorSheet {
 			};
 
 			if (item.type === 'basic') {
-				const itemObj = context.actor.items.get(item._id);
 				const weapData = itemObj.getWeaponDisplayData(this.actor);
 				item.quality = weapData.qualityString;
 				item.detail = weapData.detailString;
@@ -315,7 +308,6 @@ export class FUStandardActorSheet extends ActorSheet {
 				basics.push(item);
 			} else if (item.type === 'weapon') {
 				item.unarmedStrike = context.actor.getSingleItemByFuid('unarmed-strike');
-				const itemObj = context.actor.items.get(item._id);
 				const weapData = itemObj.getWeaponDisplayData(this.actor);
 				item.quality = weapData.qualityString;
 				item.detail = weapData.detailString;
@@ -325,7 +317,6 @@ export class FUStandardActorSheet extends ActorSheet {
 			} else if (item.type === 'armor') {
 				armor.push(item);
 			} else if (item.type === 'shield') {
-				const itemObj = context.actor.items.get(item._id);
 				const weapData = itemObj.getWeaponDisplayData(this.actor);
 				item.quality = weapData.qualityString;
 				item.detail = weapData.detailString;
@@ -337,14 +328,12 @@ export class FUStandardActorSheet extends ActorSheet {
 			} else if (item.type === 'class') {
 				classes.push(item);
 			} else if (item.type === 'skill') {
-				const itemObj = context.actor.items.get(item._id);
 				const skillData = itemObj.getSkillDisplayData();
 				item.quality = skillData.qualityString;
 				skills.push(item);
 			} else if (item.type === 'heroic') {
 				heroics.push(item);
 			} else if (item.type === 'spell') {
-				const itemObj = context.actor.items.get(item._id);
 				const spellData = itemObj.getSpellDisplayData(this.actor);
 				item.quality = spellData.qualityString;
 				item.detail = spellData.detailString;
@@ -352,7 +341,6 @@ export class FUStandardActorSheet extends ActorSheet {
 				item.damageString = spellData.damageString;
 				spells.push(item);
 			} else if (item.type === 'miscAbility') {
-				const itemObj = context.actor.items.get(item._id);
 				const skillData = itemObj.getSkillDisplayData();
 				item.quality = skillData.qualityString;
 				abilities.push(item);
@@ -361,12 +349,10 @@ export class FUStandardActorSheet extends ActorSheet {
 			} else if (item.type === 'behavior') {
 				behaviors.push(item);
 			} else if (item.type === 'consumable') {
-				const itemObj = context.actor.items.get(item._id);
 				const itemData = itemObj.getItemDisplayData();
 				item.quality = itemData.qualityString;
 				consumables.push(item);
 			} else if (item.type === 'treasure') {
-				const itemObj = context.actor.items.get(item._id);
 				const itemData = itemObj.getItemDisplayData();
 				item.quality = itemData.qualityString;
 				treasures.push(item);
@@ -421,17 +407,9 @@ export class FUStandardActorSheet extends ActorSheet {
 			const relevantTypes = ['optionalFeature'];
 
 			if (relevantTypes.includes(item.type)) {
-				const progressArr = [];
+				const itemObj = context.actor.items.get(item._id);
 				const progress = item.system.data.progress || { current: 0, max: 6 };
-
-				for (let i = 0; i < progress.max; i++) {
-					progressArr.push({
-						id: i + 1,
-						checked: parseInt(progress.current) === i + 1,
-					});
-				}
-
-				item.progressArr = progressArr.reverse();
+				item.progressArr = itemObj.generateProgressArray(progress);
 			}
 		}
 	}
