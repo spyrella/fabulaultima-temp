@@ -2,6 +2,11 @@ import { KeyDataModel } from './key-data-model.mjs';
 import { ToneDataModel } from './tone-data-model.mjs';
 import { FU, SYSTEM } from '../../../../helpers/config.mjs';
 import { Flags } from '../../../../helpers/flags.mjs';
+import { CommonSections } from '../../../../checks/common-sections.mjs';
+import { Targeting } from '../../../../helpers/targeting.mjs';
+
+const SCALING_FORMULA = '($wlp*2)+&step(0,10,20)';
+
 async function getDescription(model, useAttributes = false) {
 	const key = model.key;
 	const tone = model.tone;
@@ -31,9 +36,14 @@ async function getDescription(model, useAttributes = false) {
 		const keyData = key.system.data;
 		rollData.key = {
 			type: game.i18n.localize(FU.damageTypes[keyData.type]),
-			status: game.i18n.localize(KeyDataModel.statuses[keyData.status]),
+			damage: `@DMG[${SCALING_FORMULA} ${keyData.type}]`,
+			status: `@EFFECT[${keyData.status}]`,
 			attribute: game.i18n.localize(FU.attributeAbbreviations[keyData.attribute]),
-			recovery: game.i18n.localize(KeyDataModel.recoveryOptions[keyData.recovery]),
+			boost: `@EFFECT[${keyData.attribute}-up]`,
+			resistance: `@AFFINITY[${keyData.type} resistance]`,
+			normal: `@AFFINITY[${keyData.type} none]`,
+			vulnerability: `@AFFINITY[${keyData.type} vulnerability]`,
+			recovery: `@GAIN[${SCALING_FORMULA} ${keyData.recovery}]`,
 		};
 
 		const actor = model.parent?.parent?.actor;
@@ -99,6 +109,10 @@ export class VersesApplication extends FormApplication {
 		return 'systems/projectfu/templates/feature/chanter/feature-verse-application.hbs';
 	}
 
+	get defaultVolume() {
+		return 'low';
+	}
+
 	async getData(options = {}) {
 		// Prepare data for the form template
 		let keys = this.#verse.actor.itemTypes.classFeature
@@ -129,7 +143,7 @@ export class VersesApplication extends FormApplication {
 		let performance = {
 			key: this.#verse.key?.id || '',
 			tone: this.#verse.tone?.id || '',
-			volume: this.#verse.volume || 'low',
+			volume: this.#verse.volume || this.defaultVolume,
 		};
 
 		return {
@@ -172,7 +186,7 @@ export class VersesApplication extends FormApplication {
 			return;
 		}
 
-		const volumeSelection = this.#verse.volume || 'medium';
+		const volumeSelection = this.#verse.volume || this.defaultVolume;
 
 		const volumes = {
 			low: game.i18n.localize('FU.ClassFeatureVerseVolumeLow'),
@@ -187,24 +201,38 @@ export class VersesApplication extends FormApplication {
 		};
 
 		// Prepare the data object for the chat message
+		let flags = { [SYSTEM]: { [Flags.ChatMessage.Item]: this.#verse } };
+		const cost = this.#verse.config[volumeSelection];
+		const actor = this.#verse.actor;
+		const item = this.#verse.item;
+		const targets = Targeting.getSerializedTargetData();
+
+		// SpendResource
+		const sections = [];
+		const expense = {
+			resource: 'mp',
+			amount: cost,
+		};
+		CommonSections.spendResource(sections, actor, item, targets, flags, expense);
+
+		// Data for the template
 		const data = {
 			verse: this.#verse,
 			volume: volumes[volumeSelection],
-			cost: this.#verse.config[volumeSelection],
+			cost: cost,
 			targets: volumeTargets[volumeSelection],
 			key: this.#verse.key?.name || '',
 			tone: this.#verse.tone?.name || '',
 			description: await getDescription(this.#verse, true),
+			sections: sections,
 		};
-
-		const actor = this.#verse.actor;
 
 		// Prepare the chat message data
 		const chatMessage = {
 			speaker: ChatMessage.implementation.getSpeaker({ actor }),
 			flavor: await renderTemplate('systems/projectfu/templates/chat/chat-check-flavor-item.hbs', this.#verse.parent.parent),
 			content: await renderTemplate('systems/projectfu/templates/feature/chanter/feature-verse-chat-message.hbs', data),
-			flags: { [SYSTEM]: { [Flags.ChatMessage.Item]: this.#verse } },
+			flags: flags,
 		};
 
 		// Create the chat message
