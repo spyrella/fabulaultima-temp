@@ -2,8 +2,8 @@ import { FU } from './config.mjs';
 import { InlineHelper } from './inline-helper.mjs';
 import { targetHandler } from './target-handler.mjs';
 import { CharacterDataModel } from '../documents/actors/character/character-data-model.mjs';
-import { Effects } from '../documents/effects/effects.mjs';
 import { NpcDataModel } from '../documents/actors/npc/npc-data-model.mjs';
+import { Effects } from '../pipelines/effects.mjs';
 
 const dataType = 'InlineWeapon';
 const className = `inline-affinity`;
