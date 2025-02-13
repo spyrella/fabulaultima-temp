@@ -40,6 +40,13 @@ const initHrZero = (hrZero) => (check) => {
  */
 
 /**
+ * @typedef TemplateDamageData
+ * @property {DamageData} damage
+ * @property {*} result
+ *
+ */
+
+/**
  * @param {CheckV2, CheckResultV2} check
  * @return {CheckConfigurer} check
  */
@@ -382,6 +389,7 @@ class CheckInspector {
 	}
 
 	/**
+	 * @returns {TemplateDamageData}
 	 * @remarks Used for templating
 	 */
 	getDamageData() {

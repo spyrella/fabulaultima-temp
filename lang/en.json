@@ -1283,6 +1283,7 @@
 		"DamagePipelineStepIncomingDamagePoison": "Incoming Damage: Poison",
 		"EndOfTurn": "End of Turn",
 		"EndOfRound": "End of Round",
-		"EndOfCombat": "End of Combat"
+		"EndOfCombat": "End of Combat",
+		"Expression": "Expression"
 	}
 }

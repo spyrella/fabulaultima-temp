@@ -220,6 +220,9 @@ export class MiscAbilityDataModel extends foundry.abstract.TypeDataModel {
 					if (item.system.useWeapon.damage) {
 						damageMods.push(...damage.modifiers.filter(({ label }) => label !== 'FU.AccuracyCheckBonusGeneric'));
 					}
+					if (item.system.damage.bonus) {
+						/** @type String **/
+					}
 					return {
 						type: this.damage.type || damage.type,
 						modifiers: damageMods,

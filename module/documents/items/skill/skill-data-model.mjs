@@ -1,7 +1,3 @@
-import { UseWeaponDataModel } from '../common/use-weapon-data-model.mjs';
-import { ItemAttributesDataModel } from '../common/item-attributes-data-model.mjs';
-import { DamageDataModel } from '../common/damage-data-model.mjs';
-import { ImprovisedDamageDataModel } from '../common/improvised-damage-data-model.mjs';
 import { ProgressDataModel } from '../common/progress-data-model.mjs';
 import { FU, SYSTEM } from '../../../helpers/config.mjs';
 import { CheckHooks } from '../../../checks/check-hooks.mjs';
@@ -14,6 +10,11 @@ import { CommonSections } from '../../../checks/common-sections.mjs';
 import { CHECK_DETAILS } from '../../../checks/default-section-order.mjs';
 import { ActionCostDataModel } from '../common/action-cost-data-model.mjs';
 import { TargetingDataModel } from '../common/targeting-data-model.mjs';
+import { MiscAbilityMigrations } from '../misc/misc-ability-migrations.mjs';
+import { deprecationNotice } from '../../../helpers/deprecation-helper.mjs';
+import { UseWeaponDataModelV2 } from '../common/use-weapon-data-model-v2.mjs';
+import { ItemAttributesDataModelV2 } from '../common/item-attributes-data-model-v2.mjs';
+import { DamageDataModelV2 } from '../common/damage-data-model-v2.mjs';
 
 const weaponUsedBySkill = 'weaponUsedBySkill';
 const skillForAttributeCheck = 'skillForAttributeCheck';
@@ -176,6 +177,8 @@ function getTags(skill) {
 	];
 }
 
+const ABILITY_USED_WEAPON = 'AbilityUsedWeapon';
+
 /**
  * @property {string} subtype.value
  * @property {string} summary.value
@@ -186,22 +189,34 @@ function getTags(skill) {
  * @property {number} level.min
  * @property {number} level.max
  * @property {string} class.value
- * @property {UseWeaponDataModel} useWeapon
- * @property {ItemAttributesDataModel} attributes
+ * @property {UseWeaponDataModelV2} useWeapon
+ * @property {ItemAttributesDataModelV2} attributes
  * @property {number} accuracy.value
  * @property {Defense} defense
- * @property {DamageDataModel} damage
+ * @property {DamageDataModelV2} damage
  * @property {ImprovisedDamageDataModel} impdamage
  * @property {string} source.value
- * @property {UseWeaponDataModel} rollInfo.useWeapon
- * @property {ItemAttributesDataModel} rollInfo.attributes
- * @property {number} rollInfo.accuracy.value
- * @property {DamageDataModel} rollInfo.damage
  * @property {boolean} hasRoll.value
  * @property {ActionCostDataModel} cost
  * @property {TargetingDataModel} targeting
  */
 export class SkillDataModel extends foundry.abstract.TypeDataModel {
+	static {
+		deprecationNotice(this, 'rollInfo.useWeapon.accuracy.value', 'useWeapon.accuracy');
+		deprecationNotice(this, 'rollInfo.useWeapon.damage.value', 'useWeapon.damage');
+		deprecationNotice(this, 'rollInfo.useWeapon.hrZero.value', 'damage.hrZero');
+		deprecationNotice(this, 'rollInfo.attributes.primary.value', 'attributes.primary');
+		deprecationNotice(this, 'rollInfo.attributes.secondary.value', 'attributes.secondary');
+		deprecationNotice(this, 'rollInfo.accuracy.value', 'accuracy');
+		deprecationNotice(this, 'rollInfo.damage.hasDamage.value', 'damage.hasDamage');
+		deprecationNotice(this, 'rollInfo.damage.value', 'damage.value');
+		deprecationNotice(this, 'rollInfo.damage.type.value', 'damage.type');
+		deprecationNotice(this, 'impdamage.hasImpDamage.value');
+		deprecationNotice(this, 'impdamage.value');
+		deprecationNotice(this, 'impdamage.impType.value');
+		deprecationNotice(this, 'impdamage.type.value');
+	}
+
 	static defineSchema() {
 		const { SchemaField, StringField, HTMLField, BooleanField, NumberField, EmbeddedDataField } = foundry.data.fields;
 		return {
@@ -217,51 +232,138 @@ export class SkillDataModel extends foundry.abstract.TypeDataModel {
 				min: new NumberField({ initial: 0, min: 0, integer: true, nullable: false }),
 			}),
 			class: new SchemaField({ value: new StringField() }),
-			useWeapon: new EmbeddedDataField(UseWeaponDataModel, {}),
-			attributes: new EmbeddedDataField(ItemAttributesDataModel, {
+			useWeapon: new EmbeddedDataField(UseWeaponDataModelV2, {}),
+			attributes: new EmbeddedDataField(ItemAttributesDataModelV2, {
 				initial: {
-					primary: { value: 'ins' },
-					secondary: { value: 'mig' },
+					primary: 'dex',
+					secondary: 'ins',
 				},
 			}),
-			accuracy: new SchemaField({ value: new NumberField({ initial: 0, integer: true, nullable: false }) }),
-			defense: new StringField({ initial: 'def', choices: Object.keys(FU.defenses) }),
-			damage: new EmbeddedDataField(DamageDataModel, {}),
-			impdamage: new EmbeddedDataField(ImprovisedDamageDataModel, {}),
+			accuracy: new NumberField({ initial: 0, integer: true, nullable: false }),
+			defense: new StringField({ initial: 'def', choices: Object.keys(FU.defenses), blank: true }),
+			damage: new EmbeddedDataField(DamageDataModelV2, {}),
 			hasResource: new SchemaField({ value: new BooleanField() }),
 			rp: new EmbeddedDataField(ProgressDataModel, {}),
 			source: new SchemaField({ value: new StringField() }),
-			rollInfo: new SchemaField({
-				useWeapon: new EmbeddedDataField(UseWeaponDataModel, {}),
-				attributes: new EmbeddedDataField(ItemAttributesDataModel, {
-					initial: {
-						primary: { value: 'ins' },
-						secondary: { value: 'mig' },
-					},
-				}),
-				accuracy: new SchemaField({ value: new NumberField({ initial: 0, integer: true, nullable: false }) }),
-				damage: new EmbeddedDataField(DamageDataModel, {}),
-			}),
 			hasRoll: new SchemaField({ value: new BooleanField() }),
 			cost: new EmbeddedDataField(ActionCostDataModel, {}),
 			targeting: new EmbeddedDataField(TargetingDataModel, {}),
 		};
 	}
 
+	static migrateData(source) {
+		MiscAbilityMigrations.run(source);
+		return source;
+	}
+
+	prepareBaseData() {
+		if (!this.hasRoll.value) {
+			this.useWeapon.accuracy = false;
+			this.damage.hasDamage = false;
+		}
+		if (!this.useWeapon.accuracy) {
+			this.damage.hasDamage = false;
+		}
+		if (!this.damage.hasDamage) {
+			this.useWeapon.damage = false;
+		}
+		if (!this.useWeapon.damage && !this.damage.type) {
+			this.damage.type = 'physical';
+		}
+	}
+
 	/**
-	 * @param {KeyboardModifiers} modifier
+	 * @param {KeyboardModifiers} modifiers
+	 * @return {Promise<void>}
 	 */
-	roll(modifier) {
+	async roll(modifiers) {
 		if (this.hasRoll.value) {
-			if (this.rollInfo.useWeapon.accuracy.value) {
-				return ChecksV2.accuracyCheck(this.parent.actor, this.parent, CheckConfiguration.initHrZero(modifier.shift));
+			if (this.useWeapon.accuracy) {
+				return ChecksV2.accuracyCheck(this.parent.actor, this.parent, this.#initializeAccuracyCheck(modifiers));
 			} else {
-				return ChecksV2.attributeCheck(this.parent.actor, { primary: this.rollInfo.attributes.primary.value, secondary: this.rollInfo.attributes.secondary.value }, (check) => {
-					check.additionalData[skillForAttributeCheck] = this.parent.uuid;
+				return ChecksV2.attributeCheck(
+					this.parent.actor,
+					{
+						primary: this.attributes.primary,
+						secondary: this.attributes.secondary,
+					},
+					this.#initializeAttributeCheck(),
+				);
+			}
+		}
+		return ChecksV2.display(this.parent.actor, this.parent);
+	}
+
+	/**
+	 * @param {KeyboardModifiers} modifiers
+	 * @return {CheckCallback}
+	 */
+	#initializeAccuracyCheck(modifiers) {
+		return async (check, actor, item) => {
+			const weapon = await ChooseWeaponDialog.prompt(actor, true);
+			if (weapon === false) {
+				let message = game.i18n.localize('FU.AbilityNoWeaponEquipped');
+				ui.notifications.error(message);
+				throw new Error(message);
+			}
+			if (weapon == null) {
+				throw new Error('no selection');
+			}
+			const { check: weaponCheck, error } = await ChecksV2.prepareCheckDryRun('accuracy', actor, weapon);
+			if (error) {
+				throw error;
+			}
+
+			check.primary = weaponCheck.primary;
+			check.secondary = weaponCheck.secondary;
+			check.additionalData[ABILITY_USED_WEAPON] = weapon.uuid;
+
+			const inspect = CheckConfiguration.inspect(weaponCheck);
+			const configure = CheckConfiguration.configure(check);
+
+			if (this.accuracy) {
+				check.modifiers.push({
+					label: 'FU.CheckBonus',
+					value: this.accuracy,
+				});
+				check.modifiers.push(...weaponCheck.modifiers);
+			}
+
+			if (this.damage.hasDamage) {
+				configure.setHrZero(this.damage.hrZero || modifiers.shift);
+				configure.setTargetedDefense(this.defense || inspect.getTargetedDefense());
+				configure.modifyDamage(() => {
+					const damage = inspect.getDamage();
+					/** @type BonusDamage[] */
+					const damageMods = [];
+					if (item.system.damage.value) {
+						damageMods.push({
+							label: 'FU.DamageBonus',
+							value: item.system.damage.value,
+						});
+					}
+					if (item.system.useWeapon.damage) {
+						damageMods.push(...damage.modifiers.filter(({ label }) => label !== 'FU.AccuracyCheckBonusGeneric'));
+					}
+					return {
+						type: this.damage.type || damage.type,
+						modifiers: damageMods,
+					};
 				});
 			}
-		} else {
-			return ChecksV2.display(this.parent.actor, this.parent);
-		}
+		};
+	}
+
+	/**
+	 * @return {CheckCallback}
+	 */
+	#initializeAttributeCheck() {
+		return (check) => {
+			check.modifiers.push({
+				label: 'FU.CheckBonus',
+				value: this.accuracy,
+			});
+			check.additionalData[ABILITY_USED_WEAPON] = this.parent.uuid;
+		};
 	}
 }

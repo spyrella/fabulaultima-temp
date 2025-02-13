@@ -2,12 +2,15 @@ import { ImprovisedEffect } from '../helpers/improvised-effect.mjs';
 import { MathHelper } from '../helpers/math-helper.mjs';
 import { FUActor } from '../documents/actors/actor.mjs';
 import { FUItem } from '../documents/items/item.mjs';
+import { Targeting } from '../helpers/targeting.mjs';
+import { InlineSourceInfo } from '../helpers/inline-helper.mjs';
 
 /**
  * @description Contains contextual objects used for evaluating expressions
  * @property {FUActor} actor The source of the action
  * @property {FUItem} item
  * @property {FUActor[]} targets
+ * @property {InlineSourceInfo} sourceInfo
  * @remarks Do not serialize this class, as it references full objects. Instead, store their uuids
  * and resolve them with the static constructor
  */
@@ -16,6 +19,7 @@ export class ExpressionContext {
 		this.actor = actor;
 		this.item = item;
 		this.targets = targets;
+		this.sourceInfo = InlineSourceInfo.fromInstance(this.actor, this.item);
 	}
 
 	/**
@@ -47,6 +51,16 @@ export class ExpressionContext {
 			item = fromUuidSync(itemUuid);
 		}
 		return new ExpressionContext(actor, item, targets);
+	}
+
+	/**
+	 * @property {FUActor} actor The source of the action
+	 * @property {FUItem} item
+	 * @param {FUActor[]} targets
+	 * @returns {ExpressionContext}
+	 */
+	static fromTargetData(actor, item, targets) {
+		return new ExpressionContext(actor, item, Targeting.deserializeTargetData(targets));
 	}
 
 	/**
@@ -237,6 +251,14 @@ function evaluateMacros(expression, context) {
 				}
 				return skill.system.level.value;
 			}
+			// Backlash: Roll attribute, spend resource
+			// case 'backlash': {
+			// 	context.assertActor(match);
+			// 	const attr = splitArgs[0];
+			// 	const res = splitArgs[1];
+			// 	return await backlash(context.actor, attr, res, context.sourceInfo);
+			// }
+			// Scale from 5-19, 20-39, 40+
 			case 'step':
 				return stepByLevel(context, splitArgs[0], splitArgs[1], splitArgs[2]);
 			default:
@@ -305,6 +327,21 @@ function evaluateReferencedProperties(expression, context) {
 
 	return expression.replace(pattern, evaluate);
 }
+
+// /**
+//  * @param {FUActor} actor
+//  * @param {FU.attributes} key
+//  * @param {FU.resources} resource
+//  * @param {InlineSourceInfo} sourceInfo
+//  * @returns {Number}
+//  */
+// async function backlash(actor, key, resource, sourceInfo) {
+// 	const value = await rollAttributeDie(actor, key);
+// 	// Create chat message too
+// 	const request = new ResourceRequest(sourceInfo, [actor], resource, value);
+// 	await ResourcePipeline.processLoss(request);
+// 	return value;
+// }
 
 /**
  * @param obj The object to resolve the function  from

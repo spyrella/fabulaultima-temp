@@ -6,6 +6,8 @@ import { FU } from '../helpers/config.mjs';
 import { Flags } from '../helpers/flags.mjs';
 import { Pipeline } from '../pipelines/pipeline.mjs';
 import { ConsumableDataModel } from '../documents/items/consumable/consumable-data-model.mjs';
+import { DamageDataModelV2 } from '../documents/items/common/damage-data-model-v2.mjs';
+import { ExpressionContext, Expressions } from '../expressions/expressions.mjs';
 
 /**
  * @param {CheckRenderData} sections
@@ -146,7 +148,7 @@ const opportunity = (sections, opportunity, order) => {
  * @param {TargetData[]} targets
  * @param {Object} flags
  * @param accuracyData
- * @param damageData
+ * @param {TemplateDamageData} damageData
  */
 const damage = (sections, actor, item, targets, flags, accuracyData, damageData) => {
 	const isTargeted = targets?.length > 0 || !Targeting.STRICT_TARGETING;
@@ -163,6 +165,17 @@ const damage = (sections, actor, item, targets, flags, accuracyData, damageData)
 						damage: damageData,
 					}),
 				);
+
+				// Append expression value if present
+				if (item.system.damage && item.system.damage instanceof DamageDataModelV2) {
+					const expr = item.system.damage.expression;
+					const context = ExpressionContext.fromTargetData(actor, item, targets);
+					const bonusValue = Expressions.evaluate(expr, context);
+					damageData.damage.modifiers.push({
+						label: 'FU.DamageBonus',
+						value: bonusValue,
+					});
+				}
 
 				selectedActions.push(
 					new TargetAction('applyDamageSelected', 'fa-heart-crack', 'FU.ChatApplyDamageTooltip', {
