@@ -127,7 +127,7 @@ async function processRecovery(request) {
 			amount: amountRecovered,
 			resource: request.resourceType,
 			actor: actor,
-			token: Targeting.getActorToken(actor),
+			token: actor.resolveToken(),
 		};
 		Hooks.call(FUHooks.GAIN_EVENT, gainEvent);
 
@@ -189,7 +189,7 @@ async function processLoss(request) {
 			amount: amountLost,
 			resource: request.resourceType,
 			actor: actor,
-			token: Targeting.getActorToken(actor),
+			token: actor.resolveToken(),
 		};
 		Hooks.call(FUHooks.LOSS_EVENT, lossEvent);
 

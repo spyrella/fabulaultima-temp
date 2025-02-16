@@ -3,7 +3,6 @@ import { FUHooks } from '../../hooks.mjs';
 import { toggleStatusEffect } from '../../pipelines/effects.mjs';
 import { SYSTEM } from '../../helpers/config.mjs';
 import { Flags } from '../../helpers/flags.mjs';
-import { Targeting } from '../../helpers/targeting.mjs';
 
 /**
  * @typedef Actor
@@ -202,7 +201,7 @@ export class FUActor extends Actor {
 					/** @type CrisisEvent **/
 					{
 						actor: this,
-						token: Targeting.getActorToken(this),
+						token: this.resolveToken(),
 					},
 				);
 				await toggleStatusEffect(this, 'crisis');
@@ -217,7 +216,7 @@ export class FUActor extends Actor {
 					/** @type DefeatEvent **/
 					{
 						actor: this,
-						token: Targeting.getActorToken(this),
+						token: this.resolveToken(),
 					},
 				);
 				await toggleStatusEffect(this, 'ko');
@@ -385,6 +384,23 @@ export class FUActor extends Actor {
 			ui.notifications.info(game.i18n.format('FU.UseMetaCurrencyNotificationInsufficientPoints', { actor: this.name, type: metaCurrency }));
 			return false;
 		}
+	}
+
+	/**
+	 * @returns {Token}
+	 * @remarks https://foundryvtt.com/api/classes/client.TokenDocument.html
+	 */
+	resolveToken() {
+		// For unlinked actors (usually NPCs)
+		if (this.token) {
+			return this.token;
+		}
+		// For linked actors (PCs, sometimes villains?)
+		const tokens = this.getActiveTokens(true);
+		if (tokens) {
+			return tokens[0];
+		}
+		throw Error(`Failed to get token for ${this.uuid}`);
 	}
 
 	/**

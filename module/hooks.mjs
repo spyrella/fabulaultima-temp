@@ -76,6 +76,12 @@ export const FUHooks = {
 	 * @remarks Uses {@link DefeatEvent}
 	 */
 	DEFEAT_EVENT: 'projectfu.events.defeat',
+	/**
+	 * @description Dispatched after an actor has a status effect applied on them.
+	 * @example callback(event)
+	 * @remarks Uses {@link StatusEvent}
+	 */
+	STATUS_EVENT: 'projectfu.events.status',
 };
 
 /**
@@ -117,4 +123,13 @@ export const FUHooks = {
  * @description Dispatched when an actor is reduced to 0 HP
  * @typedef DefeatEvent
  * @property {FUActor} actor
+ */
+
+/**
+ * @description Dispatched when an actor has a status toggled.
+ * @typedef StatusEvent
+ * @property {FUActor} actor
+ * @property {Token} token
+ * @property {String} status The id of the status effect
+ * @property {String} enabled Whether the effect is enabled
  */
