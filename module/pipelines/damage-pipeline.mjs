@@ -331,6 +331,19 @@ async function process(request) {
 		const damageTaken = -context.result;
 		updates.push(actor.modifyTokenAttribute('resources.hp', damageTaken, true));
 		actor.showFloatyText(`${damageTaken} HP`, `red`);
+
+		// Dispatch event
+		/** @type DamageEvent  **/
+		const damageEvent = {
+			amount: context.result,
+			type: request.damageType,
+			actor: actor,
+			token: actor.resolveToken(),
+			sourceActor: context.sourceActor,
+			sourceToken: context.sourceActor ? context.sourceActor.resolveToken() : null,
+		};
+		Hooks.call(FUHooks.DAMAGE_EVENT, damageEvent);
+
 		// Chat message
 		const affinityString = await renderTemplate('systems/projectfu/templates/chat/partials/inline-damage-icon.hbs', {
 			damage: context.result,
