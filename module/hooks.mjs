@@ -42,6 +42,75 @@ export const FUHooks = {
 	ROLL_STUDY: 'studyRoll',
 	/**
 	 * @description Invoked when there's a change in the combat state
+	 * @example callback(event)
+	 * @remarks Uses {@link CombatEvent}
 	 */
-	COMBAT_EVENT: 'projectfu.combat',
+	COMBAT_EVENT: 'projectfu.events.combat',
+	/**
+	 * @description Invoked after damage has been applied to an actor
+	 * @example callback(event)
+	 * @remarks Uses {@link DamageEvent}
+	 */
+	DAMAGE_EVENT: 'projectfu.events.damage',
+	/**
+	 * @description Invoked after resource gain has been applied to an actor
+	 * @example callback(event)
+	 * @remarks Uses {@link GainEvent}
+	 */
+	GAIN_EVENT: 'projectfu.events.gain',
+	/**
+	 * @description Invoked after resource loss has been applied to an actor
+	 * @example callback(event)
+	 * @remarks Uses {@link LossEvent}
+	 */
+	LOSS_EVENT: 'projectfu.events.loss',
+	/**
+	 * @description Invoked after an actor enters or exits crisis
+	 * @example callback(event)
+	 * @remarks Uses {@link CrisisEvent}
+	 */
+	CRISIS_EVENT: 'projectfu.events.crisis',
+	/**
+	 * @description Invoked after an actor is reduced to 0 hit points
+	 * @example callback(event)
+	 * @remarks Uses {@link DefeatEvent}
+	 */
+	DEFEAT_EVENT: 'projectfu.events.defeat',
 };
+
+/**
+ * @description Dispatched when an actor suffers damage
+ * @typedef DamageEvent
+ * @property {FU.damageTypes} type
+ * @property {Number} amount
+ * @property {FUActor} target
+ */
+
+/**
+ * @description Dispatched when an actor recovers resources (such as HP, MP)
+ * @typedef GainEvent
+ * @property {FU.resources} resource
+ * @property {Number} amount
+ * @property {FUActor} target
+ */
+
+/**
+ * @description Dispatched when an actor loses resources (such as HP, MP)
+ * @typedef LossEvent
+ * @property {FU.resources} resource
+ * @property {Number} amount
+ * @property {FUActor} target
+ */
+
+/**
+ * @description Dispatched when an actor enters crisis
+ * @typedef CrisisEvent
+ * @property {FUActor} actor
+ * @property {Boolean} enter
+ */
+
+/**
+ * @description Dispatched when an actor is reduced to 0 HP
+ * @typedef DefeatEvent
+ * @property {FUActor} actor
+ */

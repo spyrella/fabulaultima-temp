@@ -170,6 +170,11 @@ export class FUActor extends Actor {
 		await super._preUpdate(changed, options, user);
 	}
 
+	/**
+	 * @returns {Promise<void>}
+	 * @private
+	 * @override
+	 */
 	async _onUpdate(changed, options, userId) {
 		const { hp } = this.system?.resources || {};
 
@@ -178,6 +183,7 @@ export class FUActor extends Actor {
 			const shouldBeInCrisis = hp.value <= crisisThreshold;
 			const isInCrisis = this.statuses.has('crisis');
 			if (shouldBeInCrisis !== isInCrisis) {
+				Hooks.call(FUHooks.CRISIS_EVENT, /** @type CrisisEvent **/ { actor: this, enter: true });
 				await toggleStatusEffect(this, 'crisis');
 			}
 
@@ -185,6 +191,7 @@ export class FUActor extends Actor {
 			const shouldBeKO = hp.value === 0; // KO when HP is 0
 			const isKO = this.statuses.has('ko');
 			if (shouldBeKO !== isKO) {
+				Hooks.call(FUHooks.DEFEAT_EVENT, /** @type DefeatEvent **/ { actor: this });
 				await toggleStatusEffect(this, 'ko');
 			}
 		}
