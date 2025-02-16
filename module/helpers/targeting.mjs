@@ -164,6 +164,24 @@ async function panToCombatant(token) {
 	await canvas.animatePan({ x, y, scale: Math.max(canvas.stage.scale.x, 0.5) });
 }
 
+/**
+ * @param {FUActor} actor
+ * @returns {TokenDocument}
+ * @remarks https://foundryvtt.com/api/classes/client.TokenDocument.html
+ */
+function getActorToken(actor) {
+	// For unlinked actors (usually NPCs)
+	if (actor.token) {
+		return actor.token;
+	}
+	// For linked actors (PCs, sometimes villains?)
+	const tokens = actor.getActiveTokens(true);
+	if (tokens) {
+		return tokens[0];
+	}
+	throw Error(`Failed to get token for ${actor.uuid}`);
+}
+
 export const Targeting = Object.freeze({
 	rule: {
 		self: 'self',
@@ -177,6 +195,7 @@ export const Targeting = Object.freeze({
 	serializeTargetData,
 	deserializeTargetData,
 	onRenderChatMessage,
+	getActorToken,
 	STRICT_TARGETING,
 	defaultAction,
 });

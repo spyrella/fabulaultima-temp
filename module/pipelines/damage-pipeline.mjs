@@ -10,6 +10,7 @@ import { InlineSourceInfo } from '../helpers/inline-helper.mjs';
 import { ApplyTargetHookData, BeforeApplyHookData } from './legacy-hook-data.mjs';
 import { ResourcePipeline, ResourceRequest } from './resource-pipeline.mjs';
 import { ChatMessageHelper } from '../helpers/chat-message-helper.mjs';
+import { Targeting } from '../helpers/targeting.mjs';
 
 /**
  * @typedef {"incomingDamage.all", "incomingDamage.air", "incomingDamage.bolt", "incomingDamage.dark", "incomingDamage.earth", "incomingDamage.fire", "incomingDamage.ice", "incomingDamage.light", "incomingDamage.poison"} DamagePipelineStepIncomingDamage
@@ -337,7 +338,10 @@ async function process(request) {
 		const damageEvent = {
 			amount: context.result,
 			type: request.damageType,
-			target: actor,
+			actor: actor,
+			token: Targeting.getActorToken(actor),
+			sourceActor: context.sourceActor,
+			sourceToken: context.sourceActor ? Targeting.getActorToken(context.sourceActor) : null,
 		};
 		Hooks.call(FUHooks.DAMAGE_EVENT, damageEvent);
 

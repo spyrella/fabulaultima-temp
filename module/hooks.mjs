@@ -83,7 +83,10 @@ export const FUHooks = {
  * @typedef DamageEvent
  * @property {FU.damageTypes} type
  * @property {Number} amount
- * @property {FUActor} target
+ * @property {FUActor} actor
+ * @property {Token} token
+ * @property {FUActor} sourceActor
+ * @property {Token} sourceToken
  */
 
 /**
@@ -91,7 +94,8 @@ export const FUHooks = {
  * @typedef GainEvent
  * @property {FU.resources} resource
  * @property {Number} amount
- * @property {FUActor} target
+ * @property {FUActor} actor
+ * @property {Token} token
  */
 
 /**
@@ -99,14 +103,14 @@ export const FUHooks = {
  * @typedef LossEvent
  * @property {FU.resources} resource
  * @property {Number} amount
- * @property {FUActor} target
+ * @property {FUActor} actor
+ * @property {Token} token
  */
 
 /**
  * @description Dispatched when an actor enters crisis
  * @typedef CrisisEvent
  * @property {FUActor} actor
- * @property {Boolean} enter
  */
 
 /**
